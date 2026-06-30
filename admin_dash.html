@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Command | RECYCLER</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html { scroll-behavior: smooth; }
+        .chart-container { background: white; padding: 25px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .status-pill { padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .assign-btn { background: #00d166; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .assign-btn:hover { background: #05bc5f; transform: scale(1.05); }
+        input.driver-input { padding: 8px; border: 1px solid #e2e8f0; border-radius: 8px; outline: none; width: 130px; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <div class="sidebar">
+            <h2 style="padding: 20px; color: var(--primary); letter-spacing: 1px;">RECYCLER</h2>
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-link active">📊 Overview</a>
+            <a href="#records-section" class="nav-link">📜 Records Log</a>
+            <a href="{{ url_for('logout') }}" class="nav-link" style="margin-top: auto; color: #ff7675; padding-bottom: 40px;">Logout</a>
+        </div>
+
+        <div class="main-content">
+            <header style="margin-bottom: 30px;">
+                <h1>Administrative Command</h1>
+                <p style="color: #64748b;">Nairobi E-Waste Hub Management | Welcome, {{ session['username'] }}</p>
+            </header>
+
+            <div class="chart-container">
+                <h3 style="margin-bottom: 20px; color: #0f172a;">Recycling Performance (Monthly kg)</h3>
+                <canvas id="adminChart" height="80"></canvas>
+            </div>
+
+            <div id="records-section" class="stat-card" style="padding: 30px; border-top: 4px solid var(--primary);">
+                <h3 style="margin-bottom: 20px;">📜 Completed Records Log</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead style="text-align: left; background: #f8fafc;">
+                        <tr>
+                            <th style="padding: 15px; color: #64748b;">CITIZEN</th>
+                            <th style="padding: 15px; color: #64748b;">WASTE ITEMS</th>
+                            <th style="padding: 15px; color: #64748b;">STATUS</th>
+                            <th style="padding: 15px; color: #64748b;">DRIVER ASSIGNMENT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pickup in pickups %}
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                            <td style="padding: 15px; font-weight: 500;">{{ pickup.citizen_name }}</td>
+                            <td style="padding: 15px; color: #475569;">{{ pickup.waste_details }}</td>
+                            <td style="padding: 15px;">
+                                <span class="status-pill" style="background: {{ '#fef3c7; color: #92400e;' if pickup.status == 'Pending' else '#dcfce7; color: #166534;' }}">
+                                    {{ pickup.status }}
+                                </span>
+                            </td>
+                            <td style="padding: 15px;">
+                                {% if pickup.status == 'Pending' %}
+                                    <form action="/assign_pickup" method="POST" style="display: flex; gap: 10px; align-items: center;">
+                                        <input type="hidden" name="pickup_id" value="{{ pickup.id }}">
+                                        <input type="text" name="driver_name" class="driver-input" placeholder="Enter Driver" required>
+                                        <button type="submit" class="assign-btn">Assign</button>
+                                    </form>
+                                {% else %}
+                                    <span style="font-weight: 700; color: #0f172a;">🚚 {{ pickup.driver_assigned }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('adminChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Waste Volume (kg)',
+                    data: [450, 590, 800, 720, 1100, 1400],
+                    borderColor: '#00d166',
+                    backgroundColor: 'rgba(0, 209, 102, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    </script>
+</body>
+</html>

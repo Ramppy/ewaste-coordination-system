@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Logistics | RECYCLER</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        html { scroll-behavior: smooth; } /* Essential for sidebar links */
+        .map-preview { height: 180px; width: 100%; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
+        .facility-card { padding: 15px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; transition: transform 0.2s; }
+        .facility-card:hover { border-color: var(--primary); background: #f0fdf4; }
+        .badge-id { background: #f1f5f9; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .status-pill { padding: 4px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .btn-transit { background: #f59e0b !important; color: white !important; }
+        .btn-complete { background: #059669 !important; color: white !important; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <div class="sidebar">
+            <h2 style="padding: 0 20px; color: var(--primary); margin-bottom: 30px;">RECYCLER</h2>
+            
+            <a href="{{ url_for('driver_dashboard') }}" class="nav-link active">🚚 Active Tasks</a>
+            <a href="#facilities" class="nav-link">📍 Drop-off Points</a>
+            
+            <a href="{{ url_for('logout') }}" class="nav-link" style="margin-top: auto; color: #ff7675; padding-bottom: 40px;">Logout</a>
+        </div>
+
+        <div class="main-content">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <div>
+                    <h1>Driver Dispatch</h1>
+                    <p style="color: #64748b;">Welcome back, <b>{{ session['username'] }}</b></p>
+                </div>
+                <div style="text-align: right;">
+                    <span style="background: #ecfdf5; color: #059669; padding: 8px 15px; border-radius: 30px; font-weight: bold; font-size: 0.9rem;">● System Online</span>
+                </div>
+            </header>
+
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px;">
+                <div>
+                    <h3 style="margin-bottom: 20px;">Your Current Missions</h3>
+                    {% for j in jobs %}
+                    <div class="stat-card" style="border-left: 5px solid {{ '#f59e0b' if j.status == 'In Transit' else 'var(--primary)' }}; margin-bottom: 25px;">
+                        
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                            <div>
+                                <span class="status-pill" style="background: {{ '#fef3c7; color: #92400e;' if j.status == 'In Transit' else '#dcfce7; color: #166534;' }}">
+                                    {{ '🚚 In Transit' if j.status == 'In Transit' else '📍 To Collect' }}
+                                </span>
+                            </div>
+                            <span class="badge-id">ID: #00{{ j.id }}</span>
+                        </div>
+
+                        {% if j.status == 'Assigned' %}
+                            <h2 style="margin: 0;">Pickup: {{ j.citizen_name }}</h2>
+                            <p style="color: #64748b; margin-bottom: 15px;">Location: <b>{{ j.location }}</b></p>
+                            
+                            <div id="map-{{ j.id }}" class="map-preview"></div>
+
+                            <div style="display: flex; gap: 12px;">
+                                <a href="https://www.google.com/maps/search/{{ j.location }}" target="_blank" class="login-btn" style="background: #1e293b; color: white; flex: 1; text-align: center; text-decoration: none; padding: 14px;">🚀 Launch GPS</a>
+                                <a href="{{ url_for('mark_collected', p_id=j.id) }}" class="login-btn btn-transit" style="flex: 1.5; text-align: center; text-decoration: none; padding: 14px;">📦 Confirm Pickup</a>
+                            </div>
+
+                        {% elif j.status == 'In Transit' %}
+                            <h2 style="margin: 0; color: #92400e;">Destination: WEEE Centre</h2>
+                            <p style="color: #64748b; margin-bottom: 15px;">Items: <b>{{ j.waste_details }}</b></p>
+
+                            <div style="background: #fffbeb; padding: 15px; border-radius: 12px; border: 1px solid #fef3c7; margin-bottom: 15px;">
+                                <p style="margin: 0; font-size: 0.85rem; color: #92400e;"><b>Logistics Note:</b> Deliver items to Kasarani Facility for verification.</p>
+                            </div>
+
+                            <div style="display: flex; gap: 12px;">
+                                <a href="https://www.google.com/maps/search/WEEE+Centre+Kasarani" target="_blank" class="login-btn" style="background: #b45309; color: white; flex: 1; text-align: center; text-decoration: none; padding: 14px;">🗺️ Facility GPS</a>
+                                <a href="{{ url_for('mark_dropped_off', p_id=j.id) }}" class="login-btn btn-complete" style="flex: 1.5; text-align: center; text-decoration: none; padding: 14px;">🏭 Confirm Delivery</a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script>
+                        var map{{ j.id }} = L.map('map-{{ j.id }}', {zoomControl: false}).setView([-1.286, 36.817], 12);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map{{ j.id }});
+                        L.marker([-1.286, 36.817]).addTo(map{{ j.id }});
+                    </script>
+
+                    {% else %}
+                    <div style="text-align: center; padding: 80px 40px; background: white; border-radius: 20px; border: 2px dashed #e2e8f0;">
+                        <h2 style="color: #64748b;">☕ No Active Tasks</h2>
+                        <p style="color: #94a3b8;">You're all caught up. Assignments will appear here.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div id="facilities" class="stat-card">
+                    <h3 style="margin-bottom: 15px;">Nairobi Disposal Hubs</h3>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="facility-card">
+                            <p style="margin: 0; font-weight: bold;">WEEE Centre</p>
+                            <p style="margin: 0; font-size: 0.8rem; color: #64748b;">📍 Kasarani, Mwiki Rd</p>
+                        </div>
+                        <div class="facility-card">
+                            <p style="margin: 0; font-weight: bold;">Sinomet Kenya Ltd</p>
+                            <p style="margin: 0; font-size: 0.8rem; color: #64748b;">📍 Mombasa Road</p>
+                        </div>
+                        <div class="facility-card">
+                            <p style="margin: 0; font-weight: bold;">E-Waste Initiative</p>
+                            <p style="margin: 0; font-size: 0.8rem; color: #64748b;">📍 Dagoretti Corner</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

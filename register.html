@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Account | RECYCLER</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="login-body">
+
+    <div class="login-container">
+
+        <div class="login-header">
+            <div class="logo-circle">♻️</div>
+            <h1>JOIN US.</h1>
+            <p>E-Waste Coordination and Recycling System</p>
+        </div>
+
+        <form action="/register" method="POST">
+
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" name="username" placeholder="Enter your name" required>
+            </div>
+
+            <div class="input-group">
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="name@example.com" required>
+            </div>
+
+            <div class="input-group">
+                <label>Create Password</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+
+            <div class="input-group">
+                <label>I am a...</label>
+                <select name="role">
+                    <option value="Citizen">Citizen (Disposer)</option>
+                    <option value="Driver">Driver (Collector)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="login-btn">Create Account</button>
+
+        </form>
+
+        <div class="login-footer">
+            <p>Already have an account? <a href="/">Back to Login</a></p>
+        </div>
+
+    </div>
+
+</body>
+</html>
